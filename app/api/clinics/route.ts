@@ -25,6 +25,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const years = searchParams.getAll('year')
   const specialty = searchParams.get('specialty')
+  const includeClosed = searchParams.get('include_closed') === 'true'
 
   if (!specialty || years.length === 0) {
     return NextResponse.json([], { status: 200 })
@@ -32,15 +33,19 @@ export async function GET(req: NextRequest) {
 
   const yearGroups = expandYearGroups(years)
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('clinics')
     .select('id, license_date, name, address, staff_count, area_pyeong, lat, lng, is_closed, closed_date, is_transfer, transfer_date')
     .in('year_group', yearGroups)
     .eq('specialty', specialty)
     .not('lat', 'is', null)
     .not('lng', 'is', null)
-    .neq('is_closed', true)   // 폐업 의원 제외
 
+  if (!includeClosed) {
+    query = query.neq('is_closed', true)  // 기본: 폐업 제외
+  }
+
+  const { data, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(data)
 }

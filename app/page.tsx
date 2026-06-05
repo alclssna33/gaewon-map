@@ -48,6 +48,7 @@ export default function Home() {
   const [clinics, setClinics] = useState<Clinic[]>([])
   const [loading, setLoading] = useState(false)
   const [headerOpen, setHeaderOpen] = useState(true)
+  const [includeClosed, setIncludeClosed] = useState(false)
 
   const [modalOpen, setModalOpen] = useState(false)
   const [addressInput, setAddressInput] = useState('')
@@ -73,11 +74,12 @@ export default function Home() {
     const params = [
       ...selectedYears.map(y => `year=${encodeURIComponent(y)}`),
       `specialty=${encodeURIComponent(selectedSpecialty)}`,
+      `include_closed=${includeClosed}`,
     ].join('&')
     const data = await fetch(`/api/clinics?${params}`).then(r => r.json())
     setClinics(data)
     setLoading(false)
-  }, [selectedYears, selectedSpecialty])
+  }, [selectedYears, selectedSpecialty, includeClosed])
 
   const runAnalysis = async () => {
     if (!addressInput.trim()) return
@@ -141,6 +143,18 @@ export default function Home() {
                 &nbsp;{m === 'default' ? '기본' : m === 'size' ? '규모별' : '인원별'}
               </label>
             ))}
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, fontSize: 14 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', background: 'rgba(255,255,255,0.1)', padding: '6px 12px', borderRadius: 6 }}>
+              <input
+                type="checkbox"
+                checked={includeClosed}
+                onChange={e => setIncludeClosed(e.target.checked)}
+                style={{ width: 15, height: 15 }}
+              />
+              🚫 폐업 의원 포함 (회색 마커)
+            </label>
           </div>
 
           <button onClick={loadMap} disabled={loading}

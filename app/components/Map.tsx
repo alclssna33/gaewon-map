@@ -82,6 +82,33 @@ const Map = forwardRef<MapHandle, MapProps>(({ clinics, viewMode }, ref) => {
       markersRef.current = {}
 
       clinics.forEach(item => {
+        // 폐업 의원: 회색 마커 + 별도 팝업
+        if (item.is_closed) {
+          const dong = (item.address ?? '').split(' ')[2] ?? ''
+          const naverLink = `https://map.naver.com/v5/search/${encodeURIComponent(item.name + ' ' + dong)}`
+          const closedMarker = L.circleMarker([item.lat, item.lng], {
+            radius: 9,
+            fillColor: '#95a5a6',
+            color: '#7f8c8d',
+            weight: 2,
+            fillOpacity: 0.7,
+          }).bindPopup(`
+            <span style="font-weight:bold;font-size:17px;display:block;margin-bottom:4px;color:#7f8c8d">${item.name}</span>
+            <div style="display:inline-block;background:#e74c3c;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:bold;margin-bottom:6px">
+              🚫 폐업: ${item.closed_date ?? '-'}
+            </div><br>
+            📅 <b>인허가:</b> ${item.license_date ?? '-'}<br>
+            📍 <b>주소:</b> ${item.address ?? '-'}<br>
+            <a href="${naverLink}" target="_blank"
+              style="display:inline-block;margin-top:8px;background:#7f8c8d;color:#fff;padding:5px 10px;border-radius:4px;text-decoration:none;font-weight:bold;font-size:13px">
+              네이버 지도 보기
+            </a>
+          `)
+          clusterRef.current!.addLayer(closedMarker)
+          markersRef.current[`${item.lat},${item.lng}`] = closedMarker
+          return
+        }
+
         const val = viewMode === 'size' ? (item.area_pyeong ?? 0) : viewMode === 'staff' ? (item.staff_count ?? 0) : 0
         const dong = (item.address ?? '').split(' ')[2] ?? ''
         const naverLink = `https://map.naver.com/v5/search/${encodeURIComponent(item.name + ' ' + dong)}`
