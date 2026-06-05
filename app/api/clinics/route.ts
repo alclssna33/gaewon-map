@@ -6,6 +6,21 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
+// "2026" → ['26.1','26.2',...,'26.12']  /  "26.3" → ['26.3']  /  "2025" → ['2025']
+function expandYearGroups(years: string[]): string[] {
+  const result: string[] = []
+  for (const y of years) {
+    if (/^\d{4}$/.test(y) && parseInt(y) >= 2026) {
+      // 연도 전체(예: "2026") → 해당 연도 월별 그룹 전체
+      const short = y.slice(2)  // "2026" → "26"
+      for (let m = 1; m <= 12; m++) result.push(`${short}.${m}`)
+    } else {
+      result.push(y)
+    }
+  }
+  return result
+}
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const years = searchParams.getAll('year')
@@ -15,10 +30,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json([], { status: 200 })
   }
 
+  const yearGroups = expandYearGroups(years)
+
   const { data, error } = await supabase
     .from('clinics')
     .select('id, license_date, name, address, staff_count, area_pyeong, lat, lng')
-    .in('year_group', years)
+    .in('year_group', yearGroups)
     .eq('specialty', specialty)
     .not('lat', 'is', null)
     .not('lng', 'is', null)

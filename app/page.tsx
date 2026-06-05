@@ -7,10 +7,24 @@ import type { MapHandle } from './components/Map'
 
 const Map = dynamic(() => import('./components/Map'), { ssr: false })
 
-const YEARS = ['-09', '10-19', '2020', '2021', '2022', '2023', '2024', '2025', '26.1']
+// 연도/월 그룹 자동 생성 로직
+// - 현재 연도: 월별 체크박스 (26.1, 26.2 ...)
+// - 이전 연도: 연도 단일 체크박스 (API에서 월별로 자동 확장)
+const NOW = new Date()
+const CURRENT_YEAR = NOW.getFullYear()   // e.g. 2026
+const CURRENT_MONTH = NOW.getMonth() + 1 // e.g. 6
+
+const CURRENT_YEAR_SHORT = String(CURRENT_YEAR).slice(2)  // "26"
+const CURRENT_MONTHS = Array.from(
+  { length: CURRENT_MONTH },
+  (_, i) => `${CURRENT_YEAR_SHORT}.${i + 1}`
+)
+
+const YEARS = ['-09', '10-19', '2020', '2021', '2022', '2023', '2024', '2025', ...CURRENT_MONTHS]
 const YEAR_LABELS: Record<string, string> = {
   '-09': '2009이전', '10-19': '10~19', '2020': '2020', '2021': '2021',
-  '2022': '2022', '2023': '2023', '2024': '2024', '2025': '2025', '26.1': '26.1',
+  '2022': '2022', '2023': '2023', '2024': '2024', '2025': '2025',
+  ...Object.fromEntries(CURRENT_MONTHS.map(m => [m, m])),
 }
 type ViewMode = 'default' | 'size' | 'staff'
 type AnalysisResult = Clinic & { distanceM: number }
