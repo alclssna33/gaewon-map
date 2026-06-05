@@ -86,6 +86,12 @@ const Map = forwardRef<MapHandle, MapProps>(({ clinics, viewMode }, ref) => {
         const dong = (item.address ?? '').split(' ')[2] ?? ''
         const naverLink = `https://map.naver.com/v5/search/${encodeURIComponent(item.name + ' ' + dong)}`
 
+        const transferBadge = item.is_transfer
+          ? `<div style="display:inline-block;margin-top:6px;background:#f39c12;color:#fff;padding:3px 8px;border-radius:4px;font-size:12px;font-weight:bold">
+               🔄 양수양도 추정: ${item.transfer_date ?? '-'}
+             </div><br>`
+          : ''
+
         const marker = L.circleMarker([item.lat, item.lng], {
           radius: 11,
           fillColor: getColor(val, viewMode),
@@ -99,6 +105,7 @@ const Map = forwardRef<MapHandle, MapProps>(({ clinics, viewMode }, ref) => {
           📍 <b>주소:</b> ${item.address ?? '-'}<br>
           👥 <b>인원:</b> <span style="color:#e74c3c;font-weight:bold">${item.staff_count ?? '-'}명</span>
           &nbsp;📐 <b>규모:</b> <span style="color:#e74c3c;font-weight:bold">${item.area_pyeong ? Math.round(item.area_pyeong) : '-'}평</span><br>
+          ${transferBadge}
           <a href="${naverLink}" target="_blank"
             style="display:inline-block;margin-top:8px;background:#2db400;color:#fff;padding:5px 10px;border-radius:4px;text-decoration:none;font-weight:bold;font-size:13px">
             네이버 지도 보기

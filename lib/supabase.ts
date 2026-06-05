@@ -16,4 +16,8 @@ export type Clinic = {
   area_pyeong: number | null
   lat: number
   lng: number
+  is_closed: boolean | null
+  closed_date: string | null
+  is_transfer: boolean | null
+  transfer_date: string | null
 }

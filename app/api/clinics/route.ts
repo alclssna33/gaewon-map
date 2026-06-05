@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await supabase
     .from('clinics')
-    .select('id, license_date, name, address, staff_count, area_pyeong, lat, lng, is_closed, closed_date')
+    .select('id, license_date, name, address, staff_count, area_pyeong, lat, lng, is_closed, closed_date, is_transfer, transfer_date')
     .in('year_group', yearGroups)
     .eq('specialty', specialty)
     .not('lat', 'is', null)
