@@ -34,11 +34,12 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await supabase
     .from('clinics')
-    .select('id, license_date, name, address, staff_count, area_pyeong, lat, lng')
+    .select('id, license_date, name, address, staff_count, area_pyeong, lat, lng, is_closed, closed_date')
     .in('year_group', yearGroups)
     .eq('specialty', specialty)
     .not('lat', 'is', null)
     .not('lng', 'is', null)
+    .neq('is_closed', true)   // 폐업 의원 제외
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(data)
