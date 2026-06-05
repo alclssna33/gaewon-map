@@ -11,7 +11,7 @@ type Row = {
   staff_count: number | null
   area_pyeong: number | null
 }
-type SortKey = 'license_date' | 'name' | 'staff_count' | 'area_pyeong'
+type SortKey = 'address' | 'license_date' | 'name' | 'staff_count' | 'area_pyeong'
 type Mode = 'week' | 'month'
 
 const NOW = new Date()
@@ -62,8 +62,8 @@ export default function TableModal({ onClose, specialties }: Props) {
   const [specialty, setSpecialty] = useState('')
   const [rows,      setRows]      = useState<Row[]>([])
   const [loading,   setLoading]   = useState(false)
-  const [sortKey,   setSortKey]   = useState<SortKey>('license_date')
-  const [sortAsc,   setSortAsc]   = useState(false)
+  const [sortKey,   setSortKey]   = useState<SortKey>('address')
+  const [sortAsc,   setSortAsc]   = useState(true)
 
   const dateRange = useCallback(() => {
     return mode === 'month'
@@ -204,7 +204,7 @@ export default function TableModal({ onClose, specialties }: Props) {
               <tr>
                 <th style={{ ...thStyle, cursor: 'default' }}>번호</th>
                 <th style={thStyle} onClick={() => toggleSort('name')}>사업장명{arrow('name')}</th>
-                <th style={thStyle}>도로명주소</th>
+                <th style={thStyle} onClick={() => toggleSort('address')}>도로명주소{arrow('address')}</th>
                 {specialty === '' && <th style={thStyle}>과목</th>}
                 <th style={{ ...thStyle, whiteSpace: 'nowrap' }} onClick={() => toggleSort('license_date')}>인허가일자{arrow('license_date')}</th>
                 <th style={thStyle} onClick={() => toggleSort('staff_count')}>의료인수{arrow('staff_count')}</th>
