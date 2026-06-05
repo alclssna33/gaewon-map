@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { Clinic } from '@/lib/supabase'
 import type { MapHandle } from './components/Map'
+import TableModal from './components/TableModal'
 
 const Map = dynamic(() => import('./components/Map'), { ssr: false })
 
@@ -49,6 +50,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false)
   const [headerOpen, setHeaderOpen] = useState(true)
   const [includeClosed, setIncludeClosed] = useState(false)
+  const [tableOpen, setTableOpen] = useState(false)
 
   const [modalOpen, setModalOpen] = useState(false)
   const [addressInput, setAddressInput] = useState('')
@@ -157,10 +159,16 @@ export default function Home() {
             </label>
           </div>
 
-          <button onClick={loadMap} disabled={loading}
-            style={{ width: '100%', background: '#3498db', color: 'white', fontSize: 17, fontWeight: 'bold', padding: '11px', borderRadius: 8, border: 'none', cursor: 'pointer' }}>
-            {loading ? '로딩 중...' : '데이터 조회하기'}
-          </button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={loadMap} disabled={loading}
+              style={{ flex: 1, background: '#3498db', color: 'white', fontSize: 17, fontWeight: 'bold', padding: '11px', borderRadius: 8, border: 'none', cursor: 'pointer' }}>
+              {loading ? '로딩 중...' : '데이터 조회하기'}
+            </button>
+            <button onClick={() => setTableOpen(true)}
+              style={{ background: '#8e44ad', color: 'white', fontSize: 15, fontWeight: 'bold', padding: '11px 16px', borderRadius: 8, border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+              📊 표로 보기
+            </button>
+          </div>
 
           <button onClick={() => setHeaderOpen(false)}
             style={{ position: 'absolute', bottom: -28, left: '50%', transform: 'translateX(-50%)', background: '#2c3e50', color: 'white', border: 'none', padding: '4px 20px', borderRadius: '0 0 10px 10px', cursor: 'pointer', fontSize: 13, zIndex: 1002 }}>
@@ -175,9 +183,13 @@ export default function Home() {
             style={{ position: 'fixed', top: 10, left: '50%', transform: 'translateX(-50%)', background: '#2c3e50', color: 'white', border: 'none', padding: '6px 22px', borderRadius: '0 0 10px 10px', cursor: 'pointer', fontSize: 13, zIndex: 1002 }}>
             ▼ 펼치기
           </button>
+          <button onClick={() => setTableOpen(true)}
+            style={{ position: 'fixed', top: 16, right: 470, zIndex: 1005, background: '#8e44ad', color: 'white', padding: '10px 18px', borderRadius: 8, fontWeight: 'bold', fontSize: 15, border: 'none', cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}>
+            📊 표로 보기
+          </button>
           <button
             onClick={() => { setModalOpen(true); setAnalysisResults(null); setGeocodeError('') }}
-            style={{ position: 'fixed', top: 16, right: 230, zIndex: 1005, background: '#e67e22', color: 'white', padding: '10px 18px', borderRadius: 8, fontWeight: 'bold', fontSize: 15, border: 'none', cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}>
+            style={{ position: 'fixed', top: 16, right: 240, zIndex: 1005, background: '#e67e22', color: 'white', padding: '10px 18px', borderRadius: 8, fontWeight: 'bold', fontSize: 15, border: 'none', cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}>
             🔍 주소 분석
           </button>
           <a href="https://cafe.naver.com/anesinformation" target="_blank" rel="noreferrer"
@@ -185,6 +197,15 @@ export default function Home() {
             개원비밀공간 바로가기 ↗
           </a>
         </>
+      )}
+
+      {/* 개원현황 테이블 모달 */}
+      {tableOpen && (
+        <TableModal
+          onClose={() => setTableOpen(false)}
+          specialties={specialties}
+          defaultSpecialty={selectedSpecialty}
+        />
       )}
 
       {/* 반경 분석 모달 */}
