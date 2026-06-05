@@ -204,7 +204,6 @@ export default function Home() {
         <TableModal
           onClose={() => setTableOpen(false)}
           specialties={specialties}
-          defaultSpecialty={selectedSpecialty}
         />
       )}
 

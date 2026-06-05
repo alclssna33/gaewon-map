@@ -8,26 +8,25 @@ const supabase = createClient(
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
-  const period  = searchParams.get('period') ?? 'week'   // week | month
-  const specialty = searchParams.get('specialty') ?? ''  // 빈값 = 전체
+  const fromDate  = searchParams.get('from_date')   // YYYY-MM-DD
+  const toDate    = searchParams.get('to_date')     // YYYY-MM-DD
+  const specialty = searchParams.get('specialty') ?? ''
 
-  const days = period === 'month' ? 30 : 7
-  const fromDate = new Date()
-  fromDate.setDate(fromDate.getDate() - days)
-  const fromStr = fromDate.toISOString().slice(0, 10)   // YYYY-MM-DD
+  if (!fromDate || !toDate) {
+    return NextResponse.json({ error: 'from_date and to_date required' }, { status: 400 })
+  }
 
   let query = supabase
     .from('clinics')
     .select('id, name, address, specialty, license_date, staff_count, area_pyeong')
-    .gte('license_date', fromStr)
-    .eq('is_closed', false)
+    .gte('license_date', fromDate)
+    .lte('license_date', toDate)
+    .neq('is_closed', true)
     .not('lat', 'is', null)
     .order('license_date', { ascending: false })
-    .limit(500)
+    .limit(1000)
 
-  if (specialty) {
-    query = query.eq('specialty', specialty)
-  }
+  if (specialty) query = query.eq('specialty', specialty)
 
   const { data, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
