@@ -1,9 +1,14 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useImperativeHandle, forwardRef } from 'react'
 import type { Clinic } from '@/lib/supabase'
 
 type ViewMode = 'default' | 'size' | 'staff'
+
+export interface MapHandle {
+  flyToClinic: (lat: number, lng: number) => void
+  setSearchPin: (lat: number, lng: number) => void
+}
 
 interface MapProps {
   clinics: Clinic[]
@@ -11,19 +16,47 @@ interface MapProps {
 }
 
 function getColor(val: number, mode: ViewMode): string {
-  if (mode === 'size') {
-    return val > 150 ? '#800026' : val > 100 ? '#BD0026' : val > 50 ? '#FD8D3C' : '#FED976'
-  }
-  if (mode === 'staff') {
-    return val >= 4 ? '#5B2C6F' : val >= 3 ? '#DA3C78' : val >= 2 ? '#E67E22' : '#F1C40F'
-  }
+  if (mode === 'size') return val > 150 ? '#800026' : val > 100 ? '#BD0026' : val > 50 ? '#FD8D3C' : '#FED976'
+  if (mode === 'staff') return val >= 4 ? '#5B2C6F' : val >= 3 ? '#DA3C78' : val >= 2 ? '#E67E22' : '#F1C40F'
   return '#3498db'
 }
 
-export default function Map({ clinics, viewMode }: MapProps) {
+const Map = forwardRef<MapHandle, MapProps>(({ clinics, viewMode }, ref) => {
   const mapRef = useRef<HTMLDivElement>(null)
   const mapInstanceRef = useRef<import('leaflet').Map | null>(null)
-  const clusterRef = useRef<import('leaflet.markercluster').MarkerClusterGroup | null>(null)
+  const clusterRef = useRef<any>(null)
+  const markersRef = useRef<Record<string, import('leaflet').CircleMarker>>({})
+  const searchPinRef = useRef<import('leaflet').Marker | null>(null)
+
+  useImperativeHandle(ref, () => ({
+    flyToClinic: (lat, lng) => {
+      const map = mapInstanceRef.current
+      const cluster = clusterRef.current
+      if (!map || !cluster) return
+      map.setView([lat, lng], 16)
+      const key = `${lat},${lng}`
+      const marker = markersRef.current[key]
+      if (marker) {
+        // @ts-ignore
+        cluster.zoomToShowLayer(marker, () => marker.openPopup())
+      }
+    },
+    setSearchPin: (lat, lng) => {
+      const map = mapInstanceRef.current
+      if (!map) return
+      import('leaflet').then(({ default: L }) => {
+        if (searchPinRef.current) searchPinRef.current.remove()
+        const icon = L.divIcon({
+          className: '',
+          html: '<div style="font-size:28px;line-height:1">🚩</div>',
+          iconSize: [28, 28],
+          iconAnchor: [4, 28],
+        })
+        searchPinRef.current = L.marker([lat, lng], { icon }).addTo(map)
+        map.setView([lat, lng], 14)
+      })
+    },
+  }))
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -39,7 +72,6 @@ export default function Map({ clinics, viewMode }: MapProps) {
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '© OpenStreetMap contributors',
         }).addTo(mapInstanceRef.current)
-
         // @ts-ignore
         clusterRef.current = L.markerClusterGroup({ disableClusteringAtZoom: 14 })
         mapInstanceRef.current.addLayer(clusterRef.current)
@@ -47,6 +79,7 @@ export default function Map({ clinics, viewMode }: MapProps) {
 
       if (!clusterRef.current) return
       clusterRef.current.clearLayers()
+      markersRef.current = {}
 
       clinics.forEach(item => {
         const val = viewMode === 'size' ? (item.area_pyeong ?? 0) : viewMode === 'staff' ? (item.staff_count ?? 0) : 0
@@ -72,6 +105,7 @@ export default function Map({ clinics, viewMode }: MapProps) {
           </a>
         `)
         clusterRef.current!.addLayer(marker)
+        markersRef.current[`${item.lat},${item.lng}`] = marker
       })
     }
 
@@ -79,4 +113,7 @@ export default function Map({ clinics, viewMode }: MapProps) {
   }, [clinics, viewMode])
 
   return <div ref={mapRef} style={{ height: '100%', width: '100%' }} />
-}
+})
+
+Map.displayName = 'Map'
+export default Map
