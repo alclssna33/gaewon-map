@@ -3,15 +3,16 @@
 import { useState, useEffect, useCallback } from 'react'
 
 type Row = {
-  id: number
+  mogaha_id: string
   name: string
   address: string | null
   specialty: string | null
   license_date: string | null
+  closed_date: string | null
   staff_count: number | null
   area_pyeong: number | null
 }
-type SortKey = 'address' | 'license_date' | 'name' | 'staff_count' | 'area_pyeong'
+type SortKey = 'address' | 'license_date' | 'closed_date' | 'name' | 'staff_count' | 'area_pyeong'
 type Mode = 'week' | 'month'
 
 // 과목별 색상
@@ -154,12 +155,15 @@ function weeksInMonth(year: number, month: number) {
   return lastDayOf(year, month) >= 29 ? 5 : 4
 }
 
+type MapMode = 'open' | 'closed' | 'all'
+
 interface Props {
   onClose: () => void
   specialties: string[]
+  mapMode: MapMode
 }
 
-export default function TableModal({ onClose, specialties }: Props) {
+export default function TableModal({ onClose, specialties, mapMode }: Props) {
   const [mode,      setMode]      = useState<Mode>('month')
   const [selYear,   setSelYear]   = useState(CUR_YEAR)
   const [selMonth,  setSelMonth]  = useState(CUR_MONTH)
@@ -180,12 +184,12 @@ export default function TableModal({ onClose, specialties }: Props) {
   const fetchData = useCallback(async () => {
     setLoading(true)
     const { from, to } = dateRange()
-    const params = new URLSearchParams({ from_date: from, to_date: to })
+    const params = new URLSearchParams({ from_date: from, to_date: to, map_mode: mapMode, facility_type: '의원' })
     if (specialty) params.set('specialty', specialty)
-    const data = await fetch(`/api/table?${params}`).then(r => r.json())
+    const data = await fetch(`/api/mr/table?${params}`).then(r => r.json())
     setRows(Array.isArray(data) ? data : [])
     setLoading(false)
-  }, [dateRange, specialty])
+  }, [dateRange, specialty, mapMode])
 
   useEffect(() => { fetchData() }, [fetchData])
 
@@ -238,7 +242,9 @@ export default function TableModal({ onClose, specialties }: Props) {
         {/* 헤더 */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 20px', borderBottom: '1px solid #eee' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ fontSize: 18, fontWeight: 'bold', color: '#2c3e50' }}>📊 개원현황 목록</div>
+            <div style={{ fontSize: 18, fontWeight: 'bold', color: '#2c3e50' }}>
+              📊 {mapMode === 'closed' ? '폐원' : mapMode === 'all' ? '전체(개원+폐원)' : '개원'} 현황 목록
+            </div>
             <button onClick={() => setShowChart(true)}
               style={{ padding: '5px 14px', fontSize: 13, borderRadius: 6, border: '1px solid #9b59b6', background: '#9b59b6', color: 'white', cursor: 'pointer', fontWeight: 'bold' }}>
               🥧 그래프
@@ -340,6 +346,7 @@ export default function TableModal({ onClose, specialties }: Props) {
               <col />
               {specialty === '' && <col style={{ width: 90 }} />}
               <col style={{ width: 100 }} />
+              {mapMode === 'closed' && <col style={{ width: 100 }} />}
               <col style={{ width: 72 }} />
               <col style={{ width: 60 }} />
             </colgroup>
@@ -349,22 +356,30 @@ export default function TableModal({ onClose, specialties }: Props) {
                 <th style={thStyle} onClick={() => toggleSort('name')}>사업장명{arrow('name')}</th>
                 <th style={thStyle} onClick={() => toggleSort('address')}>도로명주소{arrow('address')}</th>
                 {specialty === '' && <th style={thStyle}>과목</th>}
-                <th style={{ ...thStyle, whiteSpace: 'nowrap' }} onClick={() => toggleSort('license_date')}>인허가일자{arrow('license_date')}</th>
+                <th style={{ ...thStyle, whiteSpace: 'nowrap' }} onClick={() => toggleSort('license_date')}>개원일{arrow('license_date')}</th>
+                {mapMode === 'closed' && (
+                  <th style={{ ...thStyle, whiteSpace: 'nowrap', background: '#c0392b', borderRight: '1px solid #a93226' }} onClick={() => toggleSort('closed_date')}>
+                    폐업일{arrow('closed_date')}
+                  </th>
+                )}
                 <th style={thStyle} onClick={() => toggleSort('staff_count')}>의료인수{arrow('staff_count')}</th>
                 <th style={thStyle} onClick={() => toggleSort('area_pyeong')}>평수{arrow('area_pyeong')}</th>
               </tr>
             </thead>
             <tbody>
               {sorted.length === 0 && !loading && (
-                <tr><td colSpan={7} style={{ textAlign: 'center', padding: 40, color: '#999' }}>해당 기간에 데이터가 없습니다.</td></tr>
+                <tr><td colSpan={8} style={{ textAlign: 'center', padding: 40, color: '#999' }}>해당 기간에 데이터가 없습니다.</td></tr>
               )}
               {sorted.map((row, i) => (
-                <tr key={row.id} style={{ background: i % 2 === 0 ? 'white' : '#fafafa' }}>
+                <tr key={row.mogaha_id} style={{ background: i % 2 === 0 ? 'white' : '#fafafa' }}>
                   <td style={{ ...tdStyle, textAlign: 'center', color: '#888' }}>{i + 1}</td>
-                  <td style={{ ...tdStyle, fontWeight: 'bold', color: '#2c3e50' }}>{row.name}</td>
+                  <td style={{ ...tdStyle, fontWeight: 'bold', color: mapMode === 'closed' ? '#7f8c8d' : '#2c3e50' }}>{row.name}</td>
                   <td style={{ ...tdStyle, fontSize: 12, color: '#555' }}>{row.address ?? '-'}</td>
                   {specialty === '' && <td style={{ ...tdStyle, textAlign: 'center', fontSize: 12 }}>{row.specialty ?? '-'}</td>}
                   <td style={{ ...tdStyle, textAlign: 'center', whiteSpace: 'nowrap' }}>{row.license_date ?? '-'}</td>
+                  {mapMode === 'closed' && (
+                    <td style={{ ...tdStyle, textAlign: 'center', whiteSpace: 'nowrap', color: '#c0392b', fontWeight: 'bold' }}>{row.closed_date ?? '-'}</td>
+                  )}
                   <td style={{ ...tdStyle, textAlign: 'center', color: '#8e44ad', fontWeight: 'bold' }}>{row.staff_count ?? '-'}</td>
                   <td style={{ ...tdStyle, textAlign: 'center' }}>{row.area_pyeong ? Math.round(row.area_pyeong) : '-'}</td>
                 </tr>
