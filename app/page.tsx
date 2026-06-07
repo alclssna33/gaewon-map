@@ -119,7 +119,7 @@ export default function Home() {
   const headerBg = mapMode === 'closed' ? '#6b2737' : mapMode === 'all' ? '#2c3e50' : '#1a5276'
 
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', fontFamily: "'Malgun Gothic', sans-serif", overflow: 'hidden' }}>
+    <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', fontFamily: "'Malgun Gothic', sans-serif", overflow: 'hidden' }}>
 
       {headerOpen && (
         <div style={{ background: headerBg, color: 'white', padding: '12px 16px', zIndex: 1001, position: 'relative', transition: 'background 0.3s' }}>
@@ -292,7 +292,7 @@ export default function Home() {
         </div>
       )}
 
-      <div style={{ flex: 1, position: 'relative' }}>
+      <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
         <Map ref={mapRef} clinics={clinics} viewMode={viewMode} mapMode={mapMode} />
       </div>
     </div>
