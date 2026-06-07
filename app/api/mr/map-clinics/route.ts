@@ -47,7 +47,18 @@ export async function GET(req: NextRequest) {
   if (mapMode === 'closed') query = query.eq('is_closed', true)
   // 'all' 이면 필터 없음
 
-  const { data, error } = await query
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data ?? [])
+  // Supabase 기본 1,000건 제한 우회 — 페이지 단위로 전체 수집
+  const PAGE = 1000
+  const all: any[] = []
+  let from = 0
+  while (true) {
+    const { data, error } = await query.range(from, from + PAGE - 1)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (!data || data.length === 0) break
+    all.push(...data)
+    if (data.length < PAGE) break
+    from += PAGE
+  }
+
+  return NextResponse.json(all)
 }
