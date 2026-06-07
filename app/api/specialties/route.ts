@@ -18,14 +18,7 @@ export async function GET(req: NextRequest) {
 
   if (years.length === 0) return NextResponse.json([])
 
-  const { data, error } = await supabase
-    .from('clinics')
-    .select('specialty')
-    .in('year_group', years)
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-
-  const found = [...new Set(data.map((r: { specialty: string }) => r.specialty).filter(Boolean))]
-  const sorted = SPECIALTY_ORDER.filter(s => found.includes(s))
-  return NextResponse.json(sorted)
+  // 연도와 무관하게 항상 고정 순서로 전체 과목 반환
+  // (연도별로 데이터 유무에 따라 목록이 줄어드는 문제 방지)
+  return NextResponse.json(SPECIALTY_ORDER)
 }

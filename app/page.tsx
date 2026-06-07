@@ -64,14 +64,15 @@ export default function Home() {
     const params = selectedYears.map(y => `year=${encodeURIComponent(y)}`).join('&')
     fetch(`/api/specialties?${params}`)
       .then(r => r.json())
-      .then(data => { setSpecialties(data); setSelectedSpecialty(data[0] ?? '') })
+      .then(data => { setSpecialties(data) })
+      // 연도 변경해도 선택된 과목 유지 (목록은 고정이므로 리셋 불필요)
   }, [selectedYears])
 
   const toggleYear = (y: string) =>
     setSelectedYears(prev => prev.includes(y) ? prev.filter(x => x !== y) : [...prev, y])
 
   const loadMap = useCallback(async () => {
-    if (selectedYears.length === 0 || !selectedSpecialty) return
+    if (selectedYears.length === 0) return
     setLoading(true)
     const params = [
       ...selectedYears.map(y => `year=${encodeURIComponent(y)}`),
@@ -134,7 +135,13 @@ export default function Home() {
           <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
             <select value={selectedSpecialty} onChange={e => setSelectedSpecialty(e.target.value)}
               style={{ flex: 1, fontSize: 16, padding: '10px', borderRadius: 8, border: 'none', outline: 'none' }}>
-              {specialties.map(s => <option key={s} value={s}>{s}</option>)}
+              <option value="">전체 과목</option>
+              <option disabled>──────────────</option>
+              {specialties.map(s => (
+                <option key={s} value={s}>
+                  {s === '통증관련' ? '통증관련 (정형/통증/재활)' : s}
+                </option>
+              ))}
             </select>
           </div>
 

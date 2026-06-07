@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
   const specialty = searchParams.get('specialty')
   const includeClosed = searchParams.get('include_closed') === 'true'
 
-  if (!specialty || years.length === 0) {
+  if (years.length === 0) {
     return NextResponse.json([], { status: 200 })
   }
 
@@ -37,9 +37,12 @@ export async function GET(req: NextRequest) {
     .from('clinics')
     .select('id, license_date, name, address, staff_count, area_pyeong, lat, lng, is_closed, closed_date, is_transfer, transfer_date')
     .in('year_group', yearGroups)
-    .eq('specialty', specialty)
     .not('lat', 'is', null)
     .not('lng', 'is', null)
+
+  if (specialty) {
+    query = query.eq('specialty', specialty)
+  }
 
   if (!includeClosed) {
     query = query.neq('is_closed', true)  // 기본: 폐업 제외

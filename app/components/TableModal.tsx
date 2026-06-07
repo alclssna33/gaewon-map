@@ -14,6 +14,111 @@ type Row = {
 type SortKey = 'address' | 'license_date' | 'name' | 'staff_count' | 'area_pyeong'
 type Mode = 'week' | 'month'
 
+// 과목별 색상
+const SPECIALTY_COLORS: Record<string, string> = {
+  '통증관련':    '#e74c3c',
+  '내과':        '#3498db',
+  '피부과':      '#2ecc71',
+  '이비인후과':  '#f39c12',
+  '소아청소년과':'#9b59b6',
+  '가정의학과':  '#1abc9c',
+  '안과':        '#e67e22',
+  '산부인과':    '#e91e8c',
+  '성형외과':    '#00bcd4',
+  '정신과':      '#607d8b',
+  '비뇨기과':    '#8bc34a',
+  '일반의':      '#bdc3c7',
+  '병원':        '#795548',
+  '외과':        '#ff5722',
+}
+const FALLBACK_COLORS = ['#3498db','#e74c3c','#2ecc71','#f39c12','#9b59b6','#1abc9c','#e67e22','#e91e8c','#00bcd4','#607d8b','#8bc34a','#bdc3c7']
+
+function getColor(specialty: string, idx: number) {
+  return SPECIALTY_COLORS[specialty] ?? FALLBACK_COLORS[idx % FALLBACK_COLORS.length]
+}
+
+// SVG 파이차트 컴포넌트
+function PieChart({ data, title }: { data: { label: string; count: number }[]; title: string }) {
+  const total = data.reduce((s, d) => s + d.count, 0)
+  if (total === 0) return <div style={{ textAlign: 'center', padding: 40, color: '#999' }}>데이터가 없습니다.</div>
+
+  const cx = 200, cy = 200, r = 130
+  let angle = -Math.PI / 2 // 12시 방향 시작
+
+  const slices = data.map((d, i) => {
+    const ratio = d.count / total
+    const startAngle = angle
+    const endAngle = angle + ratio * 2 * Math.PI
+    angle = endAngle
+
+    const x1 = cx + r * Math.cos(startAngle)
+    const y1 = cy + r * Math.sin(startAngle)
+    const x2 = cx + r * Math.cos(endAngle)
+    const y2 = cy + r * Math.sin(endAngle)
+    const large = ratio > 0.5 ? 1 : 0
+
+    const midAngle = startAngle + (endAngle - startAngle) / 2
+    const labelR = r * 0.62
+    const lx = cx + labelR * Math.cos(midAngle)
+    const ly = cy + labelR * Math.sin(midAngle)
+
+    // 외부 레이블
+    const outerR = r + 28
+    const ox = cx + outerR * Math.cos(midAngle)
+    const oy = cy + outerR * Math.sin(midAngle)
+    const lineR = r + 8
+    const linex = cx + lineR * Math.cos(midAngle)
+    const liney = cy + lineR * Math.sin(midAngle)
+
+    return { d: `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} Z`, lx, ly, ox, oy, linex, liney, midAngle, ratio, color: getColor(d.label, i), label: d.label, count: d.count }
+  })
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+      <svg width={520} height={420} viewBox="0 0 520 420" style={{ maxWidth: '100%' }}>
+        {/* 중앙 텍스트 */}
+        <text x={cx} y={cy - 10} textAnchor="middle" fontSize={15} fontWeight="bold" fill="#2c3e50">{title}</text>
+        <text x={cx} y={cy + 12} textAnchor="middle" fontSize={13} fill="#888">개원비밀공간</text>
+
+        {slices.map((s, i) => (
+          <g key={i}>
+            <path d={s.d} fill={s.color} stroke="white" strokeWidth={2} opacity={0.92} />
+            {/* 내부 숫자 (비율 5% 이상만) */}
+            {s.ratio >= 0.05 && (
+              <text x={s.lx} y={s.ly} textAnchor="middle" dominantBaseline="middle" fontSize={13} fontWeight="bold" fill="white">
+                {s.count}
+              </text>
+            )}
+            {/* 외부 레이블 (비율 4% 이상만) */}
+            {s.ratio >= 0.04 && (
+              <>
+                <line x1={s.linex} y1={s.liney} x2={s.ox} y2={s.oy} stroke={s.color} strokeWidth={1.5} />
+                <text x={s.ox + (Math.cos(s.midAngle) > 0 ? 4 : -4)} y={s.oy - 6}
+                  textAnchor={Math.cos(s.midAngle) > 0 ? 'start' : 'end'}
+                  fontSize={11} fill="#333">{s.label}</text>
+                <text x={s.ox + (Math.cos(s.midAngle) > 0 ? 4 : -4)} y={s.oy + 7}
+                  textAnchor={Math.cos(s.midAngle) > 0 ? 'start' : 'end'}
+                  fontSize={10} fill="#888">{(s.ratio * 100).toFixed(1)}%</text>
+              </>
+            )}
+          </g>
+        ))}
+      </svg>
+
+      {/* 범례 */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 16px', justifyContent: 'center', maxWidth: 480, paddingBottom: 8 }}>
+        {data.map((d, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12 }}>
+            <div style={{ width: 12, height: 12, borderRadius: 2, background: getColor(d.label, i), flexShrink: 0 }} />
+            <span style={{ color: '#555' }}>{d.label}</span>
+            <span style={{ color: '#888', fontWeight: 'bold' }}>{d.count}건</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 const NOW = new Date()
 const CUR_YEAR  = NOW.getFullYear()
 const CUR_MONTH = NOW.getMonth() + 1
@@ -64,6 +169,7 @@ export default function TableModal({ onClose, specialties }: Props) {
   const [loading,   setLoading]   = useState(false)
   const [sortKey,   setSortKey]   = useState<SortKey>('address')
   const [sortAsc,   setSortAsc]   = useState(true)
+  const [showChart, setShowChart] = useState(false)
 
   const dateRange = useCallback(() => {
     return mode === 'month'
@@ -131,9 +237,46 @@ export default function TableModal({ onClose, specialties }: Props) {
 
         {/* 헤더 */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 20px', borderBottom: '1px solid #eee' }}>
-          <div style={{ fontSize: 18, fontWeight: 'bold', color: '#2c3e50' }}>📊 개원현황 목록</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ fontSize: 18, fontWeight: 'bold', color: '#2c3e50' }}>📊 개원현황 목록</div>
+            <button onClick={() => setShowChart(true)}
+              style={{ padding: '5px 14px', fontSize: 13, borderRadius: 6, border: '1px solid #9b59b6', background: '#9b59b6', color: 'white', cursor: 'pointer', fontWeight: 'bold' }}>
+              🥧 그래프
+            </button>
+          </div>
           <button onClick={onClose} style={{ fontSize: 24, color: '#999', background: 'none', border: 'none', cursor: 'pointer', lineHeight: 1 }}>×</button>
         </div>
+
+        {/* 파이 차트 팝업 */}
+        {showChart && (() => {
+          // rows 기반 과목별 집계
+          const countMap: Record<string, number> = {}
+          rows.forEach(r => {
+            const s = r.specialty ?? '기타'
+            countMap[s] = (countMap[s] ?? 0) + 1
+          })
+          const chartData = Object.entries(countMap)
+            .map(([label, count]) => ({ label, count }))
+            .sort((a, b) => b.count - a.count)
+          const chartTitle = mode === 'month'
+            ? `${selMonth}월 개원현황`
+            : `${selMonth}월 ${selWeek}주 개원현황`
+
+          return (
+            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 4000, display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+              onClick={e => { if (e.target === e.currentTarget) setShowChart(false) }}>
+              <div style={{ background: 'white', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.35)', maxWidth: 580, width: '95%', maxHeight: '90vh', overflowY: 'auto' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 20px', borderBottom: '1px solid #eee' }}>
+                  <div style={{ fontSize: 16, fontWeight: 'bold', color: '#2c3e50' }}>🥧 과목별 개원 현황</div>
+                  <button onClick={() => setShowChart(false)} style={{ fontSize: 24, color: '#999', background: 'none', border: 'none', cursor: 'pointer', lineHeight: 1 }}>×</button>
+                </div>
+                <div style={{ padding: '16px 12px' }}>
+                  <PieChart data={chartData} title={chartTitle} />
+                </div>
+              </div>
+            </div>
+          )
+        })()}
 
         {/* 필터 바 */}
         <div style={{ padding: '12px 20px', borderBottom: '1px solid #eee', display: 'flex', flexDirection: 'column', gap: 10 }}>
