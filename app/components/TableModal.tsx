@@ -11,6 +11,8 @@ type Row = {
   closed_date: string | null
   staff_count: number | null
   area_pyeong: number | null
+  is_transfer: boolean | null
+  transfer_date: string | null
 }
 type SortKey = 'address' | 'license_date' | 'closed_date' | 'name' | 'staff_count' | 'area_pyeong'
 type Mode    = 'week' | 'month'
@@ -422,7 +424,17 @@ export default function TableModal({ onClose, specialties, mapMode }: Props) {
                 <tr key={row.mogaha_id} style={{ background: i % 2 === 0 ? 'white' : '#fafafa' }}>
                   <td style={{ ...tdStyle, textAlign: 'center', color: '#888' }}>{i + 1}</td>
                   <td style={{ ...tdStyle, fontWeight: 'bold',
-                    color: tableMode === 'closed' ? '#7f8c8d' : '#2c3e50' }}>{row.name}</td>
+                    color: tableMode === 'closed' ? '#7f8c8d' : '#2c3e50' }}>
+                    {row.name}
+                    {row.is_transfer && (
+                      <span title={`양수양도 추정 (이전 폐업일: ${row.transfer_date ?? '-'})`}
+                        style={{ marginLeft: 6, display: 'inline-block', background: '#f39c12',
+                          color: 'white', fontSize: 10, fontWeight: 'bold', padding: '1px 5px',
+                          borderRadius: 3, verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                        🔄 양수양도
+                      </span>
+                    )}
+                  </td>
                   <td style={{ ...tdStyle, fontSize: 12, color: '#555' }}>{row.address ?? '-'}</td>
                   {specialty === '' && (
                     <td style={{ ...tdStyle, textAlign: 'center', fontSize: 12 }}>{row.specialty ?? '-'}</td>

@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
 
   let query = supabase
     .from('mogaha_registry')
-    .select('mogaha_id, name, address, region1, region2, specialty, license_date, closed_date, staff_count, area_pyeong')
+    .select('mogaha_id, name, address, region1, region2, specialty, license_date, closed_date, staff_count, area_pyeong, is_transfer, transfer_date')
     .gte(dateCol, fromDate)
     .lte(dateCol, toDate)
     .eq('facility_type', facilityType)
